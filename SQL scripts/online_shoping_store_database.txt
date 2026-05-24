@@ -1,0 +1,632 @@
+DROP DATABASE IF EXISTS online_shoping_store_database;
+CREATE DATABASE online_shoping_store_database;
+USE online_shoping_store_database;
+
+
+
+-- select * from Review;
+-- 
+-- select * from Orders;
+-- 
+-- select * from Customer;
+-- 
+-- select * from Product ;
+
+
+DROP TABLE IF EXISTS online_shoping_store_database.ChatMessage;
+DROP TABLE IF EXISTS online_shoping_store_database.Wishlist;
+DROP TABLE IF EXISTS online_shoping_store_database.Review;
+DROP TABLE IF EXISTS online_shoping_store_database.Shipment;
+DROP TABLE IF EXISTS online_shoping_store_database.Payment;
+DROP TABLE IF EXISTS online_shoping_store_database.OrderItem;
+DROP TABLE IF EXISTS online_shoping_store_database.ShoppingCartItem;
+DROP TABLE IF EXISTS online_shoping_store_database.SellingRequest;
+DROP TABLE IF EXISTS online_shoping_store_database.Orders;
+DROP TABLE IF EXISTS online_shoping_store_database.ShoppingCart;
+DROP TABLE IF EXISTS online_shoping_store_database.Product;
+DROP TABLE IF EXISTS online_shoping_store_database.Category;
+DROP TABLE IF EXISTS online_shoping_store_database.Customer;
+
+CREATE TABLE online_shoping_store_database.Customer (
+    phone_number VARCHAR(20),
+    City VARCHAR(15),
+    Name VARCHAR(20),
+    customer_password VARCHAR(100) NOT NULL,
+    created_at TIMESTAMP DEFAULT now(),
+    PRIMARY KEY (phone_number)
+);
+
+CREATE TABLE online_shoping_store_database.Category (
+    category_id INT,
+    category_name VARCHAR(100) NOT NULL,
+    category_description VARCHAR(255),
+    PRIMARY KEY (category_id),
+    UNIQUE (category_name)
+);
+
+CREATE TABLE online_shoping_store_database.Product (
+    product_id INT,
+    product_name VARCHAR(150) NOT NULL,
+    description VARCHAR(255),
+    price NUMERIC(10,2) NOT NULL,
+    image_url VARCHAR(255),
+    discount BOOLEAN DEFAULT 0,
+    availability_status VARCHAR(20) DEFAULT 'Available',
+    category_id INT NOT NULL,
+    stock_quantity INT NOT NULL DEFAULT 10,
+    created_at TIMESTAMP DEFAULT now(),
+    PRIMARY KEY (product_id),
+    FOREIGN KEY (category_id) REFERENCES online_shoping_store_database.Category(category_id),
+    CHECK (price >= 0),
+    CHECK (stock_quantity >= 0),
+    CHECK (availability_status IN ('Available', 'OutOfStock', 'Hidden'))
+);
+
+
+CREATE TABLE online_shoping_store_database.ShoppingCart (
+    cart_id INT,
+    customer_phone VARCHAR(20) NOT NULL,
+    created_at TIMESTAMP DEFAULT now(),
+    cart_status VARCHAR(20) DEFAULT 'Active',
+    PRIMARY KEY (cart_id),
+    UNIQUE (customer_phone),
+    FOREIGN KEY (customer_phone) REFERENCES online_shoping_store_database.Customer(phone_number),
+    CHECK (cart_status IN ('Active', 'CheckedOut', 'Abandoned'))
+);
+
+CREATE TABLE online_shoping_store_database.ShoppingCartItem (
+    cart_item_id INT,
+    cart_id INT NOT NULL,
+    product_id INT NOT NULL,
+    quantity INT NOT NULL DEFAULT 1,
+    added_at TIMESTAMP DEFAULT now(),
+    PRIMARY KEY (cart_item_id),
+    UNIQUE (cart_id, product_id),
+    FOREIGN KEY (cart_id) REFERENCES online_shoping_store_database.ShoppingCart(cart_id),
+    FOREIGN KEY (product_id) REFERENCES online_shoping_store_database.Product(product_id),
+    CHECK (quantity > 0)
+);
+
+CREATE TABLE online_shoping_store_database.Orders (
+    order_id INT,
+    customer_phone VARCHAR(20) NOT NULL,
+    total_amount NUMERIC(10,2) NOT NULL DEFAULT 0,
+    order_date TIMESTAMP DEFAULT now(),
+    order_status VARCHAR(20) DEFAULT 'Pending',
+    receiver_name VARCHAR(100) NOT NULL,
+    receiver_phone VARCHAR(20) NOT NULL,
+    city VARCHAR(100) NOT NULL,
+    street VARCHAR(255) NOT NULL,
+    PRIMARY KEY (order_id),
+    FOREIGN KEY (customer_phone) REFERENCES online_shoping_store_database.Customer(phone_number),
+    CHECK (total_amount >= 0),
+CHECK (order_status IN ('Pending', 'Shipped', 'Delivered'))
+);
+-- delete from  online_shoping_store_database.Orders where order_status= 'Cancelled';
+-- SELECT *
+-- FROM Orders
+-- WHERE order_status = 'Cancelled';
+CREATE TABLE online_shoping_store_database.OrderItem (
+    order_item_id INT,
+    order_id INT NOT NULL,
+    product_id INT NOT NULL,
+    quantity INT NOT NULL,
+    unit_price NUMERIC(10,2) NOT NULL,
+    PRIMARY KEY (order_item_id),
+    UNIQUE (order_id, product_id),
+    FOREIGN KEY (order_id) REFERENCES online_shoping_store_database.Orders(order_id),
+    FOREIGN KEY (product_id) REFERENCES online_shoping_store_database.Product(product_id),
+    CHECK (quantity > 0),
+    CHECK (unit_price >= 0)
+);
+
+CREATE TABLE online_shoping_store_database.Payment (
+    payment_id INT,
+    order_id INT NOT NULL,
+    payment_method VARCHAR(20) NOT NULL,
+    payment_status VARCHAR(20) DEFAULT 'Pending',
+    payment_date TIMESTAMP DEFAULT now(),
+    amount NUMERIC(10,2) NOT NULL,
+    PRIMARY KEY (payment_id),
+    UNIQUE (order_id),
+    FOREIGN KEY (order_id) REFERENCES online_shoping_store_database.Orders(order_id),
+    CHECK (amount >= 0),
+    CHECK (payment_method IN ('Card', 'Cash')),
+CHECK (payment_status IN ('Pending', 'Paid'))
+);
+
+CREATE TABLE online_shoping_store_database.Shipment (
+    shipment_id INT,
+    order_id INT NOT NULL,
+    shipment_status VARCHAR(30) DEFAULT 'Pending',
+    shipping_company VARCHAR(100),
+    tracking_number VARCHAR(100),
+    delivery_date DATETIME,
+    PRIMARY KEY (shipment_id),
+    UNIQUE (order_id),
+    UNIQUE (tracking_number),
+    FOREIGN KEY (order_id) REFERENCES online_shoping_store_database.Orders(order_id),
+CHECK (shipment_status IN ('Pending', 'OutForDelivery', 'Delivered'))
+);
+
+CREATE TABLE online_shoping_store_database.Review (
+    review_id INT,
+    customer_phone VARCHAR(20) NOT NULL,
+    product_id INT NULL,
+    order_id INT NULL,
+    rating INT NOT NULL,
+    comment VARCHAR(255),
+    review_date TIMESTAMP DEFAULT now(),
+    review_type VARCHAR(20) NOT NULL,
+    PRIMARY KEY (review_id),
+    FOREIGN KEY (customer_phone) REFERENCES online_shoping_store_database.Customer(phone_number),
+    FOREIGN KEY (product_id) REFERENCES online_shoping_store_database.Product(product_id),
+    FOREIGN KEY (order_id) REFERENCES online_shoping_store_database.Orders(order_id),
+    CHECK (rating BETWEEN 1 AND 5),
+    CHECK (review_type IN ('Product', 'Website'))
+);
+
+CREATE TABLE Wishlist (
+    wishlist_id INT,
+    product_id INT NOT NULL,
+    customer_phone VARCHAR(20) NOT NULL,
+    created_at TIMESTAMP DEFAULT now(),
+    PRIMARY KEY (wishlist_id),
+    UNIQUE (customer_phone, product_id),
+    FOREIGN KEY (customer_phone) REFERENCES Customer(phone_number),
+    FOREIGN KEY (product_id) REFERENCES Product(product_id) ON DELETE CASCADE
+);
+
+CREATE TABLE SellingRequest (
+    request_id INT,
+    customer_phone VARCHAR(20) NOT NULL,
+    category_id INT NOT NULL DEFAULT 4,
+    product_name VARCHAR(150) NOT NULL,
+    description VARCHAR(255),
+    price NUMERIC(10,2) NOT NULL,
+    image_url VARCHAR(255),
+    request_status VARCHAR(20) DEFAULT 'Pending',
+    submitted_at TIMESTAMP DEFAULT now(),
+    PRIMARY KEY (request_id),
+    FOREIGN KEY (customer_phone) REFERENCES Customer(phone_number),
+    FOREIGN KEY (category_id) REFERENCES Category(category_id),
+    CHECK (price >= 0),
+    CHECK (request_status IN ('Pending', 'Approved', 'Rejected')),
+    CHECK (category_id = 4)
+);
+
+
+
+CREATE TABLE ChatMessage (
+    message_id INT PRIMARY KEY AUTO_INCREMENT,
+    customer_phone VARCHAR(20) NOT NULL,
+    sender_type VARCHAR(20) NOT NULL,
+    message_text VARCHAR(1000) NOT NULL,
+    sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (customer_phone) REFERENCES Customer(phone_number),
+    CHECK (sender_type IN ('Customer', 'Admin'))
+);
+
+-- SELECT *
+-- FROM Customer
+-- WHERE phone_number = '0599426273';
+-- 
+-- SELECT *
+-- FROM ShoppingCart
+-- WHERE customer_phone = '0599426273';
+-- 
+-- SELECT *
+-- FROM ShoppingCartItem
+-- WHERE cart_id = (
+--     SELECT cart_id
+--     FROM ShoppingCart
+--     WHERE customer_phone = '0599426273'
+-- );
+
+
+INSERT INTO Customer (phone_number, Name, City, customer_password) values
+('0593089647', 'Melad Sam', 'Tulkarm', '3089'),
+('0599000001', 'Sami Nasser', 'Nablus', '1234'),
+('0599000002', 'Ahmad Ali', 'Tulkarm', '1234'),
+('0599000003', 'Lina Saleh', 'Ramallah', '1234'),
+('0599000004', 'Yousef Khaled', 'Jenin', '1234'),
+('0599000005', 'Mariam Ayyad', 'Qalqilya', '1234'),
+('0599000006', 'Omar Darwish', 'Hebron', '1234'),
+('0599000007', 'Rana Shaker', 'Bethlehem', '1234'),
+('0599000008', 'Kareem Saeed', 'Jericho', '1234'),
+('0599000009', 'Nour Hamdan', 'Nablus', '1234'),
+('0599000010', 'Fadi Zaki', 'Ramallah', '1234'),
+('0599000011', 'Hadeel Anani', 'Hebron', '1234'),
+('0599000012', 'Basil Odeh', 'Jenin', '1234'),
+('0599000013', 'Tareq Mansour', 'Nablus', '1234'),
+('0599000014', 'Dalia Hamed', 'Ramallah', '1234'),
+('0599000015', 'Anas Barakat', 'Hebron', '1234'),
+('0599000016', 'Salma Nofal', 'Tulkarm', '1234'),
+('0599000017', 'Majd Qasim', 'Jenin', '1234'),
+('0599000018', 'Yara Khalil', 'Bethlehem', '1234'),
+('0599000019', 'Laith Amro', 'Qalqilya', '1234'),
+('0599000020', 'Hanan Nassar', 'Jericho', '1234');
+
+
+INSERT INTO online_shoping_store_database.Category (category_id, category_name, category_description) VALUES
+(1,  'Computer Parts', 'RAM, CPU, GPU, motherboard, storage, cooler, PC cases and power supplies'),
+(2,  'Computer Accessories', 'Headsets, mouse, keyboard, microphone, mouse pad and computer monitors'),
+(3,  'Electronics & Arduino', 'Webcams, Arduino kits, transistors, servo motors and electronic components'),
+(4,  'Used Products', 'Second-hand items in good condition'),
+(5,  'Mobile Phones & Tablets', 'Smartphones, tablets and iPads'),
+(6,  'Mobile & Tablet Accessories', 'Chargers, cables, covers, AirPods and accessories'),
+(7,  'Clothes', 'Men, women and children clothes'),
+(8,  'Perfumes & Watches', 'Men and women perfumes, smart watches and classic watches'),
+(9,  'Boots & Socks', 'Men, women and children boots, shoes and socks'),
+(10, 'Home Electronics', 'Fridges, washing machines, air fryers, toasters and home electronics'),
+(11, 'Home Accessories', 'Towels, spoons, forks, knives, wall art and home tools'),
+(12, 'Books', 'Religious, educational, programming and general books'),
+(13, 'Kids Toys', 'Children toys, puzzles, cars, dolls and learning games'),
+(14, 'Garden Accessories', 'Garden tools, plants, watering tools and outdoor accessories'),
+(15, 'Other Products', 'Various products not included in other categories');
+
+INSERT INTO online_shoping_store_database.Product
+(product_id, product_name, description, price, image_url, discount, availability_status, category_id)
+VALUES
+(1001, 'Crucial DDR4 RAM 16GB', '16GB DDR4 desktop RAM for gaming and office PCs', 45.00, 'C:\Photos\Screenshot_1.png', 0, 'Available', 1),
+(1002, 'Intel Core i5 CPU', 'Intel Core i5 processor suitable for mid-range computers', 160.00, 'C:\Photos\Screenshot_2.png', 0, 'Available', 1),
+(1003, 'NVIDIA RTX 3060 GPU Msi Gaming', 'Graphics card for gaming, design and AI workloads', 300.00, 'C:\Photos\Screenshot_3.png', 1, 'Available', 1),
+(1004, 'B660 Motherboard', 'Motherboard for Intel processors with DDR4 support', 120.00, 'C:\Photos\Screenshot_4.png', 0, 'Available', 1),
+(1005, 'NVMe SSD 1TB', 'Fast 1TB NVMe storage drive for laptops and PCs', 75.00, 'C:\Photos\Screenshot_5.png', 1, 'Available', 1),
+(1006, 'TOUGHAIR 710 Black CPU Cooler', 'Cooling fan for desktop CPU with quiet performance', 35.00, 'C:\Photos\Screenshot_6.png', 0, 'Available', 1),
+(1007, 'ATX Gaming Case', 'ATX computer case with RGB fans and glass side panel', 80.00, 'C:\Photos\Screenshot_7.png', 0, 'Available', 1),
+(1008, 'Power Supply 650W GB Gold', '650W power supply unit for desktop computers', 70.00, 'C:\Photos\Screenshot_8.png', 0, 'Available', 1),
+(1009, 'DDR5 RAM 32GB', '32GB DDR5 high-speed RAM for modern gaming PCs', 95.00, 'C:\Photos\Screenshot_9.png', 0, 'Available', 1),
+(1010, 'AMD Ryzen5 5500CPU', 'AMD Ryzen 5 processor for gaming and multitasking', 180.00, 'C:\Photos\Screenshot_10.png', 1, 'Available', 1),
+
+(1011, 'Gaming Headset G432', 'Logitech gaming headset with microphone and surround sound', 45.00, 'C:\Photos\Screenshot_11.png', 1, 'Available', 2),
+(1012, 'Wireless Mouse', 'Wireless computer mouse for daily use and studying', 18.00, 'C:\Photos\Screenshot_12.png', 0, 'Available', 2),
+(1013, 'Gaming Mouse DeathAdder', 'Ryzen Wired gaming mouse with high DPI', 28.00, 'C:\Photos\Screenshot_13.png', 0, 'Available', 2),
+(1014, 'Mechanical Keyboard', 'Redragon K551 RGB mechanical keyboard for gaming and programming', 55.00, 'C:\Photos\Screenshot_14.png', 1, 'Available', 2),
+(1015, 'USB Microphone', 'DM40 USB microphone for meetings, recording and streaming', 40.00, 'C:\Photos\Screenshot_15.png', 0, 'Available', 2),
+(1016, 'Large Mouse Pad', 'Large desk mouse pad for keyboard and mouse', 12.00, 'C:\Photos\Screenshot_16.png', 0, 'Available', 2),
+(1017, 'Computer Monitor 24 Inch', 'Asus Full HD 24-inch computer monitor for work and gaming', 220.00, 'C:\Photos\Screenshot_17.png', 0, 'Available', 2),
+(1018, 'Computer Monitor 27 Inch', '27-inch IPS monitor suitable for design and studying GB', 170.00, 'C:\Photos\Screenshot_18.png', 1, 'Available', 2),
+(1019, 'Laptop Stand', 'Adjustable laptop stand for desk setup', 20.00, 'C:\Photos\Screenshot_19.png', 0, 'Available', 2),
+(1020, 'USB-C Hub', 'Multi-port USB-C hub for laptops and computers', 35.00, 'C:\Photos\Screenshot_20.png', 0, 'Available', 2),
+
+(1021, 'HD Webcam', '1080p webcam for online meetings and classes', 38.00, 'C:\Photos\Screenshot_21.png', 0, 'Available', 3),
+(1022, 'Arduino Starter Kit', 'Arduino kit with board, wires, sensors and basic components', 55.00, 'C:\Photos\Screenshot_22.png', 1, 'Available', 3),
+(1023, 'Arduino UNO Board', 'Arduino UNO development board for electronics projects', 18.00, 'C:\Photos\Screenshot_23.png', 0, 'Available', 3),
+(1024, 'Transistor Pack', 'Mixed transistors pack for electronic circuits', 6.00, 'C:\Photos\Screenshot_24.png', 0, 'Available', 3),
+(1025, 'Servo Motor', 'Small servo motor for robotics and Arduino projects', 8.00, 'C:\Photos\Screenshot_25.png', 0, 'Available', 3),
+(1026, 'Ultrasonic Sensor', 'Distance sensor for Arduino and robotics projects', 7.00, 'C:\Photos\Screenshot_26.png', 0, 'Available', 3),
+(1027, 'Breadboard Kit', 'Breadboard with jumper wires for circuit testing', 10.00, 'C:\Photos\Screenshot_27.png', 0, 'Available', 3),
+(1028, 'LED Resistor Kit', 'LEDs and resistors kit for electronics practice', 9.00, 'C:\Photos\Screenshot_28.png', 0, 'Available', 3),
+(1029, 'DC Motor', 'Small DC motor for simple electronic projects', 5.00, 'C:\Photos\Screenshot_29.png', 0, 'Available', 3),
+(1030, 'Raspberry Pi Camera Module', 'Camera module for Raspberry Pi and electronics projects', 28.00, 'C:\Photos\Screenshot_30.png', 0, 'Available', 3),
+
+(1031, 'Used Laptop', 'Second-hand laptop in good working condition', 230.00, 'C:\Photos\Screenshot_31.png', 0, 'Available', 4),
+(1032, 'Used Monitor 24 Inch', 'Second-hand computer monitor with full HD display', 90.00, 'C:\Photos\Screenshot_32.png', 0, 'Available', 4),
+(1033, 'Used Printer', 'Second-hand printer works well', 70.00, 'C:\Photos\Screenshot_33.png', 0, 'Available', 4),
+(1034, 'Used Office Chair', 'Second-hand office chair in good condition', 60.00, 'C:\Photos\Screenshot_34.png', 0, 'Available', 4),
+(1035, 'Used Phone', 'Second-hand smartphone with charger included', 120.00, 'C:\Photos\Screenshot_35.png', 0, 'Available', 4),
+(1036, 'Used Tablet', 'Second-hand tablet suitable for studying', 110.00, 'C:\Photos\Screenshot_36.png', 0, 'Available', 4),
+(1037, 'Used Keyboard', 'Second-hand keyboard works properly', 15.00, 'C:\Photos\Screenshot_37.png', 0, 'Available', 4),
+(1038, 'Used Desk Lamp', 'Second-hand desk lamp with small scratches', 10.00, 'C:\Photos\Screenshot_38.png', 0, 'Available', 4),
+
+(1039, 'Samsung Galaxy A15', 'Samsung Android phone with 128GB storage', 250.00, 'C:\Photos\Screenshot_39.png', 0, 'Available', 5),
+(1040, 'iPhone 13', 'Apple iPhone 13 with 128GB storage', 620.00, 'C:\Photos\Screenshot_40.png', 1, 'Available', 5),
+(1041, 'Xiaomi Redmi Note 13', 'Xiaomi smartphone with large display and strong battery', 210.00, 'C:\Photos\Screenshot_41.png', 0, 'Available', 5),
+(1042, 'Huawei Nova Phone', 'Huawei smartphone suitable for daily use', 230.00, 'C:\Photos\Screenshot_42.png', 0, 'Available', 5),
+(1043, 'iPad 9th Generation', 'Apple iPad suitable for studying and entertainment', 330.00, 'C:\Photos\Screenshot_43.png', 1, 'Available', 5),
+(1044, 'Samsung Galaxy Tab A9', 'Android tablet for students and home use', 180.00, 'C:\Photos\Screenshot_44.png', 0, 'Available', 5),
+(1045, 'Lenovo Tablet', 'Lenovo tablet with large screen for browsing and videos', 150.00, 'C:\Photos\Screenshot_45.png', 0, 'Available', 5),
+(1046, 'Honor Smartphone', 'Honor Android phone with good camera and battery', 190.00, 'C:\Photos\Screenshot_46.png', 0, 'Available', 5),
+
+(1047, 'Type-C Charger', 'Fast Type-C charger for mobile phones and tablets', 18.00, 'C:\Photos\Screenshot_47.png', 0, 'Available', 6),
+(1048, 'iPhone Lightning Cable', 'Charging cable for iPhone and iPad devices', 10.00, 'C:\Photos\Screenshot_48.png', 0, 'Available', 6),
+(1049, 'USB Type-C Cable', 'Durable USB Type-C charging and data cable', 8.00, 'C:\Photos\Screenshot_49.png', 0, 'Available', 6),
+(1050, 'Mobile Phone Cover', 'Protective phone cover for smartphones', 7.00, 'C:\Photos\Screenshot_50.png', 0, 'Available', 6),
+(1051, 'iPad Cover', 'Protective tablet cover for iPad devices', 15.00, 'C:\Photos\Screenshot_51.png', 0, 'Available', 6),
+(1052, 'AirPods Wireless Earbuds', 'Wireless earbuds for mobile phones and tablets', 45.00, 'C:\Photos\Screenshot_52.png', 1, 'Available', 6),
+(1053, 'Screen Protector', 'Tempered glass screen protector for phones', 5.00, 'C:\Photos\Screenshot_53.png', 0, 'Available', 6),
+(1054, 'Tablet Stand', 'Adjustable stand for tablets and iPads', 12.00, 'C:\Photos\Screenshot_54.png', 0, 'Available', 6),
+(1055, 'Power Bank 20000mAh', 'Portable power bank for phones and tablets', 35.00, 'C:\Photos\Screenshot_55.png', 1, 'Available', 6),
+(1056, 'Car Phone Holder', 'Phone holder for car dashboard', 9.00, 'C:\Photos\Screenshot_56.png', 0, 'Available', 6),
+
+(1057, 'Men Jeans Pants', 'Men clothes - classic blue jeans pants', 35.00, 'C:\Photos\Screenshot_57.png', 0, 'Available', 7),
+(1058, 'Women Long Dress', 'Women clothes - elegant long dress', 45.00, 'C:\Photos\Screenshot_58.png', 1, 'Available', 7),
+(1059, 'Children Hoodie', 'Children clothes - warm hoodie for boys and girls', 22.00, 'C:\Photos\Screenshot_59.png', 0, 'Available', 7),
+(1060, 'Men T-Shirt', 'Men clothes - cotton short sleeve t-shirt', 12.00, 'C:\Photos\Screenshot_60.png', 0, 'Available', 7),
+(1061, 'Women Jacket', 'Women clothes - winter jacket', 60.00, 'C:\Photos\Screenshot_61.png', 0, 'Available', 7),
+(1062, 'Children Shorts', 'Children clothes - comfortable summer shorts', 10.00, 'C:\Photos\Screenshot_62.png', 0, 'Available', 7),
+(1063, 'Men Formal Shirt', 'Men clothes - formal shirt for work and events', 25.00, 'C:\Photos\Screenshot_63.png', 0, 'Available', 7),
+(1064, 'Women Scarf', 'Women clothes - soft scarf for winter', 14.00, 'C:\Photos\Screenshot_64.png', 0, 'Available', 7),
+(1065, 'Children Cap', 'Children clothes - adjustable cap for kids', 8.00, 'C:\Photos\Screenshot_65.png', 0, 'Available', 7),
+(1066, 'Women Abaya', 'Women clothes - simple and elegant abaya', 50.00, 'C:\Photos\Screenshot_66.png', 0, 'Available', 7),
+
+(1067, 'Men Perfume 100ml', 'Men perfume with long-lasting fragrance', 30.00, 'C:\Photos\Screenshot_67.png', 0, 'Available', 8),
+(1068, 'Women Perfume 100ml', 'Women perfume with elegant floral scent', 35.00, 'C:\Photos\Screenshot_68.png', 1, 'Available', 8),
+(1069, 'Men Classic Watch', 'Men classic wrist watch with leather strap', 45.00, 'C:\Photos\Screenshot_69.png', 0, 'Available', 8),
+(1070, 'Women Classic Watch', 'Women classic watch with metal strap', 50.00, 'C:\Photos\Screenshot_70.png', 0, 'Available', 8),
+(1071, 'Smart Watch', 'Electronic smart watch with fitness tracking', 65.00, 'C:\Photos\Screenshot_71.png', 1, 'Available', 8),
+(1072, 'Children Digital Watch', 'Children digital watch with colorful design', 18.00, 'C:\Photos\Screenshot_72.png', 0, 'Available', 8),
+(1073, 'Men Oud Perfume', 'Men perfume with strong oud fragrance', 40.00, 'C:\Photos\Screenshot_73.png', 0, 'Available', 8),
+(1074, 'Women Rose Perfume', 'Women perfume with soft rose smell', 32.00, 'C:\Photos\Screenshot_74.png', 0, 'Available', 8),
+
+(1075, 'Men Winter Boots', 'Men boots for winter and rainy weather', 55.00, 'C:\Photos\Screenshot_75.png', 0, 'Available', 9),
+(1076, 'Women Leather Boots', 'Women boots with comfortable leather design', 60.00, 'C:\Photos\Screenshot_76.png', 1, 'Available', 9),
+(1077, 'Children School Shoes', 'Children shoes suitable for school use', 28.00, 'C:\Photos\Screenshot_77.png', 0, 'Available', 9),
+(1078, 'Men Sports Socks', 'Men socks for sports and daily use', 6.00, 'C:\Photos\Screenshot_78.png', 0, 'Available', 9),
+(1079, 'Women Cotton Socks', 'Women socks made of soft cotton', 7.00, 'C:\Photos\Screenshot_79.png', 0, 'Available', 9),
+(1080, 'Children Colorful Socks', 'Children socks with colorful designs', 5.00, 'C:\Photos\Screenshot_80.png', 0, 'Available', 9),
+(1081, 'Men Running Shoes', 'Men shoes for running and gym training', 50.00, 'C:\Photos\Screenshot_81.png', 1, 'Available', 9),
+(1082, 'Women Casual Shoes', 'Women shoes for casual daily wear', 42.00, 'C:\Photos\Screenshot_82.png', 0, 'Available', 9),
+
+(1083, 'Refrigerator', 'Large home refrigerator with freezer', 550.00, 'C:\Photos\Screenshot_83.png', 0, 'Available', 10),
+(1084, 'Washing Machine', 'Automatic washing machine for home use', 430.00, 'C:\Photos\Screenshot_84.png', 1, 'Available', 10),
+(1085, 'Air Fryer', 'Digital air fryer for healthy cooking', 80.00, 'C:\Photos\Screenshot_85.png', 0, 'Available', 10),
+(1086, 'Toaster', 'Electric toaster for bread and breakfast', 25.00, 'C:\Photos\Screenshot_86.png', 0, 'Available', 10),
+(1087, 'Vacuum Cleaner', 'Electric vacuum cleaner for home cleaning', 90.00, 'C:\Photos\Screenshot_87.png', 1, 'Available', 10),
+(1088, 'Electric Kettle', 'Fast-boil electric kettle for kitchen use', 22.00, 'C:\Photos\Screenshot_88.png', 0, 'Available', 10),
+(1089, 'Microwave Oven', 'Microwave oven for heating and cooking food', 120.00, 'C:\Photos\Screenshot_89.png', 0, 'Available', 10),
+(1090, 'Blender', 'Kitchen blender for juice and smoothies', 45.00, 'C:\Photos\Screenshot_90.png', 0, 'Available', 10),
+(1091, 'Electric Heater', 'Portable electric heater for winter', 65.00, 'C:\Photos\Screenshot_91.png', 0, 'Available', 10),
+(1092, 'Rechargeable Battery Pack', 'Rechargeable batteries with charger', 20.00, 'C:\Photos\Screenshot_92.png', 0, 'Available', 10),
+
+(1093, 'Kitchen Towel Set', 'Set of soft towels for kitchen and home use', 10.00, 'C:\Photos\Screenshot_93.png', 0, 'Available', 11),
+(1094, 'Dish Sponge Pack', 'Cleaning sponges for dishes and kitchen', 4.00, 'C:\Photos\Screenshot_94.png', 0, 'Available', 11),
+(1095, 'Spoon Set', 'Stainless steel spoons set for home use', 12.00, 'C:\Photos\Screenshot_95.png', 0, 'Available', 11),
+(1096, 'Fork Set', 'Stainless steel forks set for dining table', 12.00, 'C:\Photos\Screenshot_96.png', 0, 'Available', 11),
+(1097, 'Kitchen Knife Set', 'Knife set for kitchen cutting and cooking', 28.00, 'C:\Photos\Screenshot_97.png', 0, 'Available', 11),
+(1098, 'Wall Art Frame', 'Decorative wall frame for living room', 18.00, 'C:\Photos\Screenshot_98.png', 0, 'Available', 11),
+(1099, 'Food Storage Boxes', 'Plastic food storage containers with lids', 15.00, 'C:\Photos\Screenshot_99.png', 0, 'Available', 11),
+(1100, 'Bathroom Towel', 'Large soft towel for bathroom use', 14.00, 'C:\Photos\Screenshot_100.png', 0, 'Available', 11),
+(1101, 'Cleaning Mop', 'Floor cleaning mop for home use', 16.00, 'C:\Photos\Screenshot_101.png', 0, 'Available', 11),
+(1102, 'Laundry Basket', 'Plastic laundry basket for clothes', 13.00, 'C:\Photos\Screenshot_102.png', 0, 'Available', 11),
+
+(1103, 'Holy Quran', 'Religious book - Holy Quran with clear printing', 15.00, 'C:\Photos\Screenshot_103.png', 0, 'Available', 12),
+(1104, 'Sahih Muslim', 'Religious book - Sahih Muslim collection', 25.00, 'C:\Photos\Screenshot_104.png', 0, 'Available', 12),
+(1105, 'The Art of Rhetoric', 'Arabic language and rhetoric book', 18.00, 'C:\Photos\Screenshot_105.png', 0, 'Available', 12),
+(1106, 'The 48 Laws of Power', 'Self-development and strategy book', 20.00, 'C:\Photos\Screenshot_106.png', 1, 'Available', 12),
+(1107, 'Clean Code', 'Programming book about writing clean and maintainable code', 22.00, 'C:\Photos\Screenshot_107.png', 0, 'Available', 12),
+(1108, 'Data Structures Book', 'Computer science book about data structures', 19.00, 'C:\Photos\Screenshot_108.png', 0, 'Available', 12),
+(1109, 'English Grammar Book', 'Educational book for learning English grammar', 12.00, 'C:\Photos\Screenshot_109.png', 0, 'Available', 12),
+(1110, 'Physics Basics', 'Science book explaining basic physics concepts', 16.00, 'C:\Photos\Screenshot_110.png', 0, 'Available', 12),
+(1111, 'Arabic Novel', 'Arabic literature novel for general reading', 9.00, 'C:\Photos\Screenshot_111.png', 0, 'Available', 12),
+(1112, 'Notebook Pack', 'Pack of notebooks for school and university', 8.00, 'C:\Photos\Screenshot_112.png', 0, 'Available', 12),
+
+(1113, 'Toy Car Set', 'Children toy cars set with different colors', 15.00, 'C:\Photos\Screenshot_113.png', 0, 'Available', 13),
+(1114, 'Building Blocks', 'Children building blocks for creativity and learning', 25.00, 'C:\Photos\Screenshot_114.png', 1, 'Available', 13),
+(1115, 'Puzzle Game', 'Children puzzle game for brain training', 10.00, 'C:\Photos\Screenshot_115.png', 0, 'Available', 13),
+(1116, 'Stuffed Teddy Bear', 'Soft teddy bear toy for children', 18.00, 'C:\Photos\Screenshot_116.png', 0, 'Available', 13),
+(1117, 'Remote Control Car', 'Children RC car with remote controller', 35.00, 'C:\Photos\Screenshot_117.png', 0, 'Available', 13),
+(1118, 'Drawing Set for Kids', 'Children drawing set with colors and papers', 12.00, 'C:\Photos\Screenshot_118.png', 0, 'Available', 13),
+(1119, 'Toy Kitchen Set', 'Children toy kitchen set for pretend play', 30.00, 'C:\Photos\Screenshot_119.png', 1, 'Available', 13),
+(1120, 'Educational Alphabet Game', 'Children learning game for letters and words', 14.00, 'C:\Photos\Screenshot_120.png', 0, 'Available', 13),
+(1121, 'Football Toy Ball', 'Small ball toy for children outdoor play', 9.00, 'C:\Photos\Screenshot_121.png', 0, 'Available', 13),
+(1122, 'Kids Doctor Play Set', 'Children doctor toy set for pretend play', 20.00, 'C:\Photos\Screenshot_122.png', 0, 'Available', 13),
+
+(1123, 'Rose Plant', 'Beautiful rose plant for garden decoration', 8.00, 'C:\Photos\Screenshot_123.png', 0, 'Available', 14),
+(1124, 'Garden Shovel', 'Strong shovel for garden and soil work', 18.00, 'C:\Photos\Screenshot_124.png', 0, 'Available', 14),
+(1125, 'Garden Rake', 'Rake tool for cleaning leaves and soil', 16.00, 'C:\Photos\Screenshot_125.png', 0, 'Available', 14),
+(1126, 'Garden Hoe', 'Hoe tool for farming and garden work', 17.00, 'C:\Photos\Screenshot_126.png', 0, 'Available', 14),
+(1127, 'Small Axe', 'Small axe for outdoor and garden use', 22.00, 'C:\Photos\Screenshot_127.png', 0, 'Available', 14),
+(1128, 'Watering Can', 'Watering can for plants and flowers', 12.00, 'C:\Photos\Screenshot_128.png', 0, 'Available', 14),
+(1129, 'Flower Pot', 'Clay flower pot for indoor and outdoor plants', 7.00, 'C:\Photos\Screenshot_129.png', 0, 'Available', 14),
+(1130, 'Garden Hose', 'Flexible water hose for garden irrigation', 25.00, 'C:\Photos\Screenshot_130.png', 0, 'Available', 14),
+(1131, 'Plant Seeds Pack', 'Mixed seeds for home garden planting', 5.00, 'C:\Photos\Screenshot_131.png', 0, 'Available', 14),
+(1132, 'Outdoor Chair', 'Foldable chair for garden and outdoor sitting', 20.00, 'C:\Photos\Screenshot_132.png', 0, 'Available', 14),
+
+(1133, 'Car Hanging Ornament', 'Decorative hanging accessory for car mirror', 6.00, 'C:\Photos\Screenshot_133.png', 0, 'Available', 15),
+(1134, 'Gift Wrapping Paper', 'Colorful wrapping paper for gifts', 4.00, 'C:\Photos\Screenshot_134.png', 0, 'Available', 15),
+(1135, 'Gift Box', 'Elegant box for gifts and special occasions', 8.00, 'C:\Photos\Screenshot_135.png', 0, 'Available', 15),
+(1136, 'Men Ring', 'Simple men ring accessory', 20.00, 'C:\Photos\Screenshot_136.png', 0, 'Available', 15),
+(1137, 'Women Ring', 'Elegant women ring accessory', 25.00, 'C:\Photos\Screenshot_137.png', 1, 'Available', 15),
+(1138, 'Keychain', 'Small metal keychain for keys and bags', 3.00, 'C:\Photos\Screenshot_138.png', 0, 'Available', 15),
+(1139, 'Travel Bag', 'Medium travel bag for short trips', 40.00, 'C:\Photos\Screenshot_139.png', 0, 'Available', 15),
+(1140, 'Umbrella', 'Foldable umbrella for rain and sun protection', 12.00, 'C:\Photos\Screenshot_140.png', 0, 'Available', 15),
+(1141, 'Wallet', 'Leather wallet for cards and cash', 18.00, 'C:\Photos\Screenshot_141.png', 0, 'Available', 15),
+(1142, 'Sunglasses', 'Stylish sunglasses with UV protection', 15.00, 'C:\Photos\Screenshot_142.png', 0, 'Available', 15);
+
+UPDATE Product
+SET image_url = REPLACE(image_url, 'C:\Photos\Screenshot_', 'C:/Photos/Screenshot_')
+WHERE image_url LIKE 'C:PhotosScreenshot_%';
+
+
+INSERT INTO ShoppingCart (cart_id, customer_phone, cart_status) VALUES
+(2001, '0599000001', 'Active'),
+(2002, '0599000002', 'Active'),
+(2003, '0599000003', 'Active'),
+(2004, '0599000004', 'Active'),
+(2005, '0599000005', 'Abandoned'),
+(2006, '0599000006', 'CheckedOut'),
+(2007, '0599000007', 'Active'),
+(2008, '0599000008', 'Active'),
+(2009, '0599000009', 'Active'),
+(2010, '0599000010', 'Active'),
+(2011, '0599000011', 'CheckedOut'),
+(2012, '0599000012', 'Active'),
+(2013, '0599000013', 'Active'),
+(2014, '0599000014', 'Active'),
+(2015, '0599000015', 'Active'),
+(2016, '0599000016', 'Active'),
+(2017, '0599000017', 'Active'),
+(2018, '0599000018', 'Active'),
+(2019, '0599000019', 'Active'),
+(2020, '0599000020', 'Active');
+
+INSERT INTO ShoppingCartItem (cart_item_id, cart_id, product_id, quantity) VALUES
+(3001, 2001, 1001, 3),
+(3002, 2002, 1004, 2),
+(3003, 2003, 1005, 2),
+(3004, 2004, 1003, 2),
+(3005, 2005, 1006, 2),
+(3006, 2006, 1002, 1),
+(3007, 2007, 1007, 1),
+(3008, 2008, 1008, 4),
+(3009, 2009, 1009, 1),
+(3010, 2010, 1010, 2),
+(3011, 2011, 1011, 3),
+(3012, 2012, 1012, 1);
+
+INSERT INTO Orders
+(order_id, customer_phone, total_amount, order_status, receiver_name, receiver_phone, city, street) VALUES
+(4001, '0599000001', 50.00, 'Delivered', 'Sami Nasser', '0599000001', 'Nablus', 'Al-Quds Street'),
+(4002, '0599000002', 55.00, 'Shipped', 'Ahmad Ali', '0599000002', 'Tulkarm', 'Main Street'),
+(4003, '0599000003', 90.00, 'Pending', 'Lina Saleh', '0599000003', 'Ramallah', 'Irsal Street'),
+(4004, '0599000004', 18.00, 'Delivered', 'Yousef Khaled', '0599000004', 'Jenin', 'Cinema Street'),
+(4005, '0599000005', 120.00, 'Pending', 'Mariam Ayyad', '0599000005', 'Qalqilya', 'Al-Balad Street'),
+(4006, '0599000006', 35.00, 'Shipped', 'Omar Darwish', '0599000006', 'Hebron', 'Ein Sara Street'),
+(4007, '0599000007', 150.00, 'Pending', 'Rana Shaker', '0599000007', 'Bethlehem', 'Manger Street'),
+(4008, '0599000008', 200.00, 'Delivered', 'Kareem Saeed', '0599000008', 'Jericho', 'City Center'),
+(4009, '0599000009', 45.00, 'Pending', 'Nour Hamdan', '0599000009', 'Nablus', 'University Street'),
+(4010, '0599000010', 56.00, 'Delivered', 'Fadi Zaki', '0599000010', 'Ramallah', 'Al-Masyoun'),
+(4011, '0599000011', 22.00, 'Shipped', 'Hadeel Anani', '0599000011', 'Hebron', 'Ras Al-Jora'),
+(4012, '0599000012', 180.00, 'Pending', 'Basil Odeh', '0599000012', 'Jenin', 'Al-Hadaf Street');
+INSERT INTO OrderItem
+(order_item_id, order_id, product_id, quantity, unit_price) VALUES
+(5001, 4001, 1001, 2, 25.00),
+(5002, 4002, 1002, 1, 55.00),
+(5003, 4003, 1004, 1, 90.00),
+(5004, 4004, 1003, 1, 18.00),
+(5005, 4005, 1006, 1, 120.00),
+(5006, 4006, 1005, 1, 35.00),
+(5007, 4007, 1007, 1, 150.00),
+(5008, 4008, 1008, 1, 200.00),
+(5009, 4009, 1009, 1, 45.00),
+(5010, 4010, 1010, 2, 28.00),
+(5011, 4011, 1011, 1, 22.00),
+(5012, 4012, 1012, 1, 180.00);
+
+INSERT INTO Payment
+(payment_id, order_id, payment_method, payment_status, amount) VALUES
+(6001, 4001, 'Card', 'Paid', 50.00),
+(6002, 4002, 'Cash', 'Pending', 55.00),
+(6003, 4003, 'Card', 'Pending', 90.00),
+(6004, 4004, 'Cash', 'Pending', 18.00),
+(6005, 4005, 'Card', 'Pending', 120.00),
+(6006, 4006, 'Cash', 'Pending', 35.00),
+(6007, 4007, 'Card', 'Pending', 150.00),
+(6008, 4008, 'Cash', 'Pending', 200.00),
+(6009, 4009, 'Cash', 'Pending', 45.00),
+(6010, 4010, 'Card', 'Paid', 56.00),
+(6011, 4011, 'Cash', 'Pending', 22.00),
+(6012, 4012, 'Card', 'Pending', 180.00);
+
+INSERT INTO Shipment
+(shipment_id, order_id, shipment_status, shipping_company, tracking_number, delivery_date) VALUES
+(7001, 4001, 'Delivered', 'Aramex', 'TRK1001', '2026-03-20 10:00:00'),
+(7002, 4002, 'OutForDelivery', 'Shibly', 'TRK1002', '2026-04-12 12:00:00'),
+(7003, 4003, 'Pending', 'Aramex', 'TRK1003', '2026-04-15 09:00:00'),
+(7004, 4004, 'Delivered', 'Tayyar', 'TRK1004', '2026-03-25 11:30:00'),
+(7005, 4005, 'Pending', 'Tayyar', 'TRK1005', '2026-04-01 14:00:00'),
+(7006, 4006, 'OutForDelivery', 'Aramex', 'TRK1006', '2026-04-18 15:00:00'),
+(7007, 4007, 'Pending', 'Shibly', 'TRK1007', '2026-04-20 10:00:00'),
+(7008, 4008, 'Delivered', 'Shibly', 'TRK1008', '2026-03-30 13:00:00'),
+(7009, 4009, 'Pending', 'Aramex', 'TRK1009', '2026-04-22 09:30:00'),
+(7010, 4010, 'Delivered', 'Tayyar', 'TRK1010', '2026-04-02 16:00:00'),
+(7011, 4011, 'OutForDelivery', 'Tayyar', 'TRK1011', '2026-04-19 12:30:00'),
+(7012, 4012, 'Pending', 'Aramex', 'TRK1012', '2026-04-25 10:30:00');
+
+
+INSERT INTO Review
+(review_id, customer_phone, product_id, order_id, rating, comment, review_type) VALUES
+-- Product reviews: only Delivered orders
+(8001, '0599000001', 1001, 4001, 5, 'Very good RAM', 'Product'),
+(8002, '0599000004', 1003, 4004, 4, 'Good GPU for gaming', 'Product'),
+(8003, '0599000008', 1008, 4008, 4, 'Power supply is stable', 'Product'),
+(8004, '0599000010', 1010, 4010, 5, 'Ryzen CPU is strong', 'Product'),
+
+-- Website reviews: Shipped or Delivered orders
+(8005, '0599000001', NULL, 4001, 5, 'Great website experience', 'Website'),
+(8006, '0599000002', NULL, 4002, 4, 'Order process was easy', 'Website'),
+(8007, '0599000004', NULL, 4004, 4, 'Easy to use website', 'Website'),
+(8008, '0599000006', NULL, 4006, 5, 'Good shopping experience', 'Website'),
+(8009, '0599000008', NULL, 4008, 4, 'Website is simple and clear', 'Website'),
+(8010, '0599000010', NULL, 4010, 5, 'Fast and smooth website', 'Website'),
+(8011, '0599000011', NULL, 4011, 4, 'Good website layout', 'Website');
+
+INSERT INTO Wishlist
+(wishlist_id, product_id, customer_phone) VALUES
+(9001, 1004, '0599000001'),
+(9002, 1001, '0599000002'),
+(9003, 1006, '0599000003'),
+(9004, 1002, '0599000004'),
+(9005, 1005, '0599000005'),
+(9006, 1007, '0599000006'),
+(9007, 1008, '0599000007'),
+(9008, 1003, '0599000008'),
+(9009, 1010, '0599000009'),
+(9010, 1012, '0599000010'),
+(9011, 1009, '0599000011'),
+(9012, 1011, '0599000012');
+
+INSERT INTO SellingRequest
+(request_id, customer_phone, category_id, product_name, description, price, image_url, request_status) VALUES
+(10001, '0599000001', 4, 'Used Laptop Bag', 'Clean laptop bag in good condition', 20.00, 'bag.jpg', 'Pending'),
+(10002, '0599000002', 4, 'Used Printer', 'Printer works well', 85.00, 'printer.jpg', 'Approved'),
+(10003, '0599000003', 4, 'Old Laptop', 'Used laptop good condition', 200.00, 'laptop.jpg', 'Pending'),
+(10004, '0599000004', 4, 'Used Desk Lamp', 'Desk lamp with minor scratches', 10.00, 'lamp.jpg', 'Rejected'),
+(10005, '0599000005', 4, 'Used Mouse Pad', 'Clean mouse pad', 5.00, 'pad.jpg', 'Approved'),
+(10006, '0599000006', 4, 'Used Webcam', 'Webcam with cable included', 25.00, 'webcam.jpg', 'Pending'),
+(10007, '0599000007', 4, 'Used Router', 'Router in working condition', 40.00, 'router.jpg', 'Approved'),
+(10008, '0599000008', 4, 'Used Speakers', 'Pair of speakers, good sound', 30.00, 'speakers.jpg', 'Pending'),
+(10009, '0599000009', 4, 'Used Phone Stand', 'Phone stand in good condition', 8.00, 'phone_stand.jpg', 'Pending'),
+(10010, '0599000010', 4, 'Used External Keyboard', 'Keyboard works well', 30.00, 'external_keyboard.jpg', 'Approved'),
+(10011, '0599000011', 4, 'Used Desk Fan', 'Small desk fan, fully working', 18.00, 'desk_fan.jpg', 'Rejected'),
+(10012, '0599000012', 4, 'Used Power Bank', 'Power bank with charger', 35.00, 'power_bank.jpg', 'Pending');
+
+
+
+
+SELECT * FROM Customer;
+SELECT * FROM Category;
+SELECT * FROM Product;
+SELECT * FROM ShoppingCart;
+SELECT * FROM Orders;
+SELECT * FROM OrderItem;
+SELECT * FROM Payment;
+SELECT * FROM Shipment;
+SELECT * FROM Review;
+SELECT * FROM Wishlist;
+SELECT * FROM SellingRequest;
+SELECT * FROM ChatMessage;
+
+-- SELECT * FROM online_shoping_store_database.Wishlist;
+-- 
+-- SELECT LENGTH(product_name)
+-- FROM online_shoping_store_database.Product;
+-- 
+-- SELECT * FROM online_shoping_store_database.Product WHERE category_id = 1;
+-- 
+-- SELECT * FROM online_shoping_store_database.Product;
+-- 
+-- DESCRIBE Wishlist;
+-- 
+-- SELECT * FROM online_shoping_store_database.Category;
+-- 
+-- SELECT * FROM online_shoping_store_database.Orders;
+-- 
+-- SELECT * FROM online_shoping_store_database.Review;
+-- 
+-- SELECT * FROM online_shoping_store_database.SellingRequest;
+-- 
+-- SELECT * FROM online_shoping_store_database.Product WHERE category_id = 1;
+-- 
+-- SELECT * FROM online_shoping_store_database.Product WHERE price < 100;
+-- 
+-- UPDATE online_shoping_store_database.Orders
+-- SET order_status = 'Delivered'
+-- WHERE order_id = 4001;
+-- 
+-- UPDATE online_shoping_store_database.ShoppingCartItem
+-- SET quantity = 3
+-- WHERE cart_item_id = 3001;
+-- 
+-- UPDATE online_shoping_store_database.SellingRequest
+-- SET request_status = 'Rejected'
+-- WHERE request_id = 10002;
+-- 
+-- UPDATE online_shoping_store_database.Orders
+-- SET order_status = 'Delivered'
+-- WHERE order_id = 4002;
+-- 
+-- -- DELETE FROM Wishlist
+-- WHERE wishlist_id = 9001 AND product_id = 1004;
