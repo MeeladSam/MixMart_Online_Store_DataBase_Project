@@ -10,7 +10,7 @@ The project demonstrates database design, ERD relationships, normalization, SQL 
 
 | Name | Student ID |
 |------|------|
-| Milad Sam | 12323283 |
+| Melad Sam | 12323283 |
 | Emad Ataout | 12322222 |
 
 ---
