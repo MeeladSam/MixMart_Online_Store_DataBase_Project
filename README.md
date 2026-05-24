@@ -118,28 +118,28 @@ Validation Rules
 
 # The system validates:
 
-Phone number format
-Customer names
-Product prices
-Product stock quantity
-Card payment information
-Cart quantity vs stock
-
+- Phone number format
+- Customer names
+- Product prices
+- Product stock quantity
+- Card payment information
+- Cart quantity vs stock
+ 
 # Project Assets
 
-The repository may include:
-Java Source Code
-SQL Database Script
-Project Report
-ER Diagram
-Normalization Document
-PowerPoint Presentation
-Product Images
+- The repository may include:
+- Java Source Code
+- SQL Database Script
+- Project Report
+- ER Diagram
+- Normalization Document
+- PowerPoint Presentation
+- Product Images
 
 # Notes:
 
-Customers cannot access admin features.
-Admin cannot use customer-only functions.
-Product reviews are allowed only after delivery.
-Chat messages are stored in the database.
+- Customers cannot access admin features.
+- Admin cannot use customer-only functions.
+- Product reviews are allowed only after delivery.
+- Chat messages are stored in the database.
 
