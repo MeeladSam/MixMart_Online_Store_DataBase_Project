@@ -59,7 +59,7 @@ Database Name:
 ```sql
 onlinestore
 
-Main Tables:
+# Main Tables:
 
 Customer
 Category
@@ -79,9 +79,9 @@ How to Run the Project
 git clone https://github.com/MeeladSam/MixMart_Online_Store_DataBase_Project.git
 2. Open MySQL Workbench
 
-Run the SQL script located in:
+Run the SQL(MySQL) script:
 
-database/onlinestore.sql
+onlinestore.sql
 
 The script will:
 
