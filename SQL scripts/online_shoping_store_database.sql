@@ -1,6 +1,6 @@
-DROP DATABASE IF EXISTS online_shoping_store_database;
-CREATE DATABASE online_shoping_store_database;
-USE online_shoping_store_database;
+DROP DATABASE IF EXISTS onlinestore;
+CREATE DATABASE onlinestore;
+USE onlinestore;
 
 
 
@@ -13,21 +13,21 @@ USE online_shoping_store_database;
 -- select * from Product ;
 
 
-DROP TABLE IF EXISTS online_shoping_store_database.ChatMessage;
-DROP TABLE IF EXISTS online_shoping_store_database.Wishlist;
-DROP TABLE IF EXISTS online_shoping_store_database.Review;
-DROP TABLE IF EXISTS online_shoping_store_database.Shipment;
-DROP TABLE IF EXISTS online_shoping_store_database.Payment;
-DROP TABLE IF EXISTS online_shoping_store_database.OrderItem;
-DROP TABLE IF EXISTS online_shoping_store_database.ShoppingCartItem;
-DROP TABLE IF EXISTS online_shoping_store_database.SellingRequest;
-DROP TABLE IF EXISTS online_shoping_store_database.Orders;
-DROP TABLE IF EXISTS online_shoping_store_database.ShoppingCart;
-DROP TABLE IF EXISTS online_shoping_store_database.Product;
-DROP TABLE IF EXISTS online_shoping_store_database.Category;
-DROP TABLE IF EXISTS online_shoping_store_database.Customer;
+DROP TABLE IF EXISTS onlinestore.ChatMessage;
+DROP TABLE IF EXISTS onlinestore.Wishlist;
+DROP TABLE IF EXISTS onlinestore.Review;
+DROP TABLE IF EXISTS onlinestore.Shipment;
+DROP TABLE IF EXISTS onlinestore.Payment;
+DROP TABLE IF EXISTS onlinestore.OrderItem;
+DROP TABLE IF EXISTS onlinestore.ShoppingCartItem;
+DROP TABLE IF EXISTS onlinestore.SellingRequest;
+DROP TABLE IF EXISTS onlinestore.Orders;
+DROP TABLE IF EXISTS onlinestore.ShoppingCart;
+DROP TABLE IF EXISTS onlinestore.Product;
+DROP TABLE IF EXISTS onlinestore.Category;
+DROP TABLE IF EXISTS onlinestore.Customer;
 
-CREATE TABLE online_shoping_store_database.Customer (
+CREATE TABLE onlinestore.Customer (
     phone_number VARCHAR(20),
     City VARCHAR(15),
     Name VARCHAR(20),
@@ -36,7 +36,7 @@ CREATE TABLE online_shoping_store_database.Customer (
     PRIMARY KEY (phone_number)
 );
 
-CREATE TABLE online_shoping_store_database.Category (
+CREATE TABLE onlinestore.Category (
     category_id INT,
     category_name VARCHAR(100) NOT NULL,
     category_description VARCHAR(255),
@@ -44,7 +44,7 @@ CREATE TABLE online_shoping_store_database.Category (
     UNIQUE (category_name)
 );
 
-CREATE TABLE online_shoping_store_database.Product (
+CREATE TABLE onlinestore.Product (
     product_id INT,
     product_name VARCHAR(150) NOT NULL,
     description VARCHAR(255),
@@ -56,25 +56,25 @@ CREATE TABLE online_shoping_store_database.Product (
     stock_quantity INT NOT NULL DEFAULT 10,
     created_at TIMESTAMP DEFAULT now(),
     PRIMARY KEY (product_id),
-    FOREIGN KEY (category_id) REFERENCES online_shoping_store_database.Category(category_id),
+    FOREIGN KEY (category_id) REFERENCES onlinestore.Category(category_id),
     CHECK (price >= 0),
     CHECK (stock_quantity >= 0),
     CHECK (availability_status IN ('Available', 'OutOfStock', 'Hidden'))
 );
 
 
-CREATE TABLE online_shoping_store_database.ShoppingCart (
+CREATE TABLE onlinestore.ShoppingCart (
     cart_id INT,
     customer_phone VARCHAR(20) NOT NULL,
     created_at TIMESTAMP DEFAULT now(),
     cart_status VARCHAR(20) DEFAULT 'Active',
     PRIMARY KEY (cart_id),
     UNIQUE (customer_phone),
-    FOREIGN KEY (customer_phone) REFERENCES online_shoping_store_database.Customer(phone_number),
+    FOREIGN KEY (customer_phone) REFERENCES onlinestore.Customer(phone_number),
     CHECK (cart_status IN ('Active', 'CheckedOut', 'Abandoned'))
 );
 
-CREATE TABLE online_shoping_store_database.ShoppingCartItem (
+CREATE TABLE onlinestore.ShoppingCartItem (
     cart_item_id INT,
     cart_id INT NOT NULL,
     product_id INT NOT NULL,
@@ -82,12 +82,12 @@ CREATE TABLE online_shoping_store_database.ShoppingCartItem (
     added_at TIMESTAMP DEFAULT now(),
     PRIMARY KEY (cart_item_id),
     UNIQUE (cart_id, product_id),
-    FOREIGN KEY (cart_id) REFERENCES online_shoping_store_database.ShoppingCart(cart_id),
-    FOREIGN KEY (product_id) REFERENCES online_shoping_store_database.Product(product_id),
+    FOREIGN KEY (cart_id) REFERENCES onlinestore.ShoppingCart(cart_id),
+    FOREIGN KEY (product_id) REFERENCES onlinestore.Product(product_id),
     CHECK (quantity > 0)
 );
 
-CREATE TABLE online_shoping_store_database.Orders (
+CREATE TABLE onlinestore.Orders (
     order_id INT,
     customer_phone VARCHAR(20) NOT NULL,
     total_amount NUMERIC(10,2) NOT NULL DEFAULT 0,
@@ -98,15 +98,15 @@ CREATE TABLE online_shoping_store_database.Orders (
     city VARCHAR(100) NOT NULL,
     street VARCHAR(255) NOT NULL,
     PRIMARY KEY (order_id),
-    FOREIGN KEY (customer_phone) REFERENCES online_shoping_store_database.Customer(phone_number),
+    FOREIGN KEY (customer_phone) REFERENCES onlinestore.Customer(phone_number),
     CHECK (total_amount >= 0),
 CHECK (order_status IN ('Pending', 'Shipped', 'Delivered'))
 );
--- delete from  online_shoping_store_database.Orders where order_status= 'Cancelled';
+-- delete from  onlinestore.Orders where order_status= 'Cancelled';
 -- SELECT *
 -- FROM Orders
 -- WHERE order_status = 'Cancelled';
-CREATE TABLE online_shoping_store_database.OrderItem (
+CREATE TABLE onlinestore.OrderItem (
     order_item_id INT,
     order_id INT NOT NULL,
     product_id INT NOT NULL,
@@ -114,13 +114,13 @@ CREATE TABLE online_shoping_store_database.OrderItem (
     unit_price NUMERIC(10,2) NOT NULL,
     PRIMARY KEY (order_item_id),
     UNIQUE (order_id, product_id),
-    FOREIGN KEY (order_id) REFERENCES online_shoping_store_database.Orders(order_id),
-    FOREIGN KEY (product_id) REFERENCES online_shoping_store_database.Product(product_id),
+    FOREIGN KEY (order_id) REFERENCES onlinestore.Orders(order_id),
+    FOREIGN KEY (product_id) REFERENCES onlinestore.Product(product_id),
     CHECK (quantity > 0),
     CHECK (unit_price >= 0)
 );
 
-CREATE TABLE online_shoping_store_database.Payment (
+CREATE TABLE onlinestore.Payment (
     payment_id INT,
     order_id INT NOT NULL,
     payment_method VARCHAR(20) NOT NULL,
@@ -129,13 +129,13 @@ CREATE TABLE online_shoping_store_database.Payment (
     amount NUMERIC(10,2) NOT NULL,
     PRIMARY KEY (payment_id),
     UNIQUE (order_id),
-    FOREIGN KEY (order_id) REFERENCES online_shoping_store_database.Orders(order_id),
+    FOREIGN KEY (order_id) REFERENCES onlinestore.Orders(order_id),
     CHECK (amount >= 0),
     CHECK (payment_method IN ('Card', 'Cash')),
 CHECK (payment_status IN ('Pending', 'Paid'))
 );
 
-CREATE TABLE online_shoping_store_database.Shipment (
+CREATE TABLE onlinestore.Shipment (
     shipment_id INT,
     order_id INT NOT NULL,
     shipment_status VARCHAR(30) DEFAULT 'Pending',
@@ -145,11 +145,11 @@ CREATE TABLE online_shoping_store_database.Shipment (
     PRIMARY KEY (shipment_id),
     UNIQUE (order_id),
     UNIQUE (tracking_number),
-    FOREIGN KEY (order_id) REFERENCES online_shoping_store_database.Orders(order_id),
+    FOREIGN KEY (order_id) REFERENCES onlinestore.Orders(order_id),
 CHECK (shipment_status IN ('Pending', 'OutForDelivery', 'Delivered'))
 );
 
-CREATE TABLE online_shoping_store_database.Review (
+CREATE TABLE onlinestore.Review (
     review_id INT,
     customer_phone VARCHAR(20) NOT NULL,
     product_id INT NULL,
@@ -159,9 +159,9 @@ CREATE TABLE online_shoping_store_database.Review (
     review_date TIMESTAMP DEFAULT now(),
     review_type VARCHAR(20) NOT NULL,
     PRIMARY KEY (review_id),
-    FOREIGN KEY (customer_phone) REFERENCES online_shoping_store_database.Customer(phone_number),
-    FOREIGN KEY (product_id) REFERENCES online_shoping_store_database.Product(product_id),
-    FOREIGN KEY (order_id) REFERENCES online_shoping_store_database.Orders(order_id),
+    FOREIGN KEY (customer_phone) REFERENCES onlinestore.Customer(phone_number),
+    FOREIGN KEY (product_id) REFERENCES onlinestore.Product(product_id),
+    FOREIGN KEY (order_id) REFERENCES onlinestore.Orders(order_id),
     CHECK (rating BETWEEN 1 AND 5),
     CHECK (review_type IN ('Product', 'Website'))
 );
@@ -248,7 +248,7 @@ INSERT INTO Customer (phone_number, Name, City, customer_password) values
 ('0599000020', 'Hanan Nassar', 'Jericho', '1234');
 
 
-INSERT INTO online_shoping_store_database.Category (category_id, category_name, category_description) VALUES
+INSERT INTO onlinestore.Category (category_id, category_name, category_description) VALUES
 (1,  'Computer Parts', 'RAM, CPU, GPU, motherboard, storage, cooler, PC cases and power supplies'),
 (2,  'Computer Accessories', 'Headsets, mouse, keyboard, microphone, mouse pad and computer monitors'),
 (3,  'Electronics & Arduino', 'Webcams, Arduino kits, transistors, servo motors and electronic components'),
@@ -265,7 +265,7 @@ INSERT INTO online_shoping_store_database.Category (category_id, category_name, 
 (14, 'Garden Accessories', 'Garden tools, plants, watering tools and outdoor accessories'),
 (15, 'Other Products', 'Various products not included in other categories');
 
-INSERT INTO online_shoping_store_database.Product
+INSERT INTO onlinestore.Product
 (product_id, product_name, description, price, image_url, discount, availability_status, category_id)
 VALUES
 (1001, 'Crucial DDR4 RAM 16GB', '16GB DDR4 desktop RAM for gaming and office PCs', 45.00, 'C:\Photos\Screenshot_1.png', 0, 'Available', 1),
@@ -589,42 +589,42 @@ SELECT * FROM Wishlist;
 SELECT * FROM SellingRequest;
 SELECT * FROM ChatMessage;
 
--- SELECT * FROM online_shoping_store_database.Wishlist;
+-- SELECT * FROM onlinestore.Wishlist;
 -- 
 -- SELECT LENGTH(product_name)
--- FROM online_shoping_store_database.Product;
+-- FROM onlinestore.Product;
 -- 
--- SELECT * FROM online_shoping_store_database.Product WHERE category_id = 1;
+-- SELECT * FROM onlinestore.Product WHERE category_id = 1;
 -- 
--- SELECT * FROM online_shoping_store_database.Product;
+-- SELECT * FROM onlinestore.Product;
 -- 
 -- DESCRIBE Wishlist;
 -- 
--- SELECT * FROM online_shoping_store_database.Category;
+-- SELECT * FROM onlinestore.Category;
 -- 
--- SELECT * FROM online_shoping_store_database.Orders;
+-- SELECT * FROM onlinestore.Orders;
 -- 
--- SELECT * FROM online_shoping_store_database.Review;
+-- SELECT * FROM onlinestore.Review;
 -- 
--- SELECT * FROM online_shoping_store_database.SellingRequest;
+-- SELECT * FROM onlinestore.SellingRequest;
 -- 
--- SELECT * FROM online_shoping_store_database.Product WHERE category_id = 1;
+-- SELECT * FROM onlinestore.Product WHERE category_id = 1;
 -- 
--- SELECT * FROM online_shoping_store_database.Product WHERE price < 100;
+-- SELECT * FROM onlinestore.Product WHERE price < 100;
 -- 
--- UPDATE online_shoping_store_database.Orders
+-- UPDATE onlinestore.Orders
 -- SET order_status = 'Delivered'
 -- WHERE order_id = 4001;
 -- 
--- UPDATE online_shoping_store_database.ShoppingCartItem
+-- UPDATE onlinestore.ShoppingCartItem
 -- SET quantity = 3
 -- WHERE cart_item_id = 3001;
 -- 
--- UPDATE online_shoping_store_database.SellingRequest
+-- UPDATE onlinestore.SellingRequest
 -- SET request_status = 'Rejected'
 -- WHERE request_id = 10002;
 -- 
--- UPDATE online_shoping_store_database.Orders
+-- UPDATE onlinestore.Orders
 -- SET order_status = 'Delivered'
 -- WHERE order_id = 4002;
 -- 
